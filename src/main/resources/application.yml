@@ -1,0 +1,20 @@
+server:
+  port: 7000
+spring:
+  jpa:
+    database: mysql
+    hibernate:
+      ddl-auto: update
+  profiles:
+    active: dev
+
+jwt:
+  secret: uk_gex1lmaqpg0ir5g1f5eftyaa1
+  expiration: -1
+
+resources:
+   static-locations: file:src/main/resources/static/
+
+pageSize : 10
+
+

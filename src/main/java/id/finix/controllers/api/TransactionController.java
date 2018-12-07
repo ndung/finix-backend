@@ -4,6 +4,7 @@ import id.finix.Application;
 import id.finix.controllers.Response;
 import java.util.List;
 
+import id.finix.domain.Biller;
 import id.finix.domain.Product;
 import id.finix.services.transaction.TransactionService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,22 @@ public class TransactionController extends BaseController{
         }
         try {
             List<Product> list = transactionService.getAllProducts(userId);
+            return getHttpStatus(new Response(list));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return getHttpStatus(new Response(e.getMessage()));
+        }
+    }
+
+    @RequestMapping(value = "/get-billers-by-category/{id}", method = RequestMethod.GET)
+    public ResponseEntity<Response> getBillersByCategory(//@RequestHeader(Application.AUTH) String token,
+                                                          @PathVariable("id") int id) {
+        //String userId = getUserId(token);
+        //if (userId==null){
+        //    return FORBIDDEN;
+        //}
+        try {
+            List<Biller> list = transactionService.getBillersByCategory(id);
             return getHttpStatus(new Response(list));
         } catch (Exception e) {
             e.printStackTrace();

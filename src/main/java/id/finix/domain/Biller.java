@@ -10,7 +10,7 @@ import javax.persistence.Table;
 public class Biller {
 
     @Id
-    @Column(name = "id")
+    @Column(name = "biller_id")
     private String id;
 
     @Column(name = "subcategory")

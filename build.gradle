@@ -31,7 +31,7 @@ dependencies {
     compile('org.springframework.boot:spring-boot-starter-data-jpa')
     compile('org.springframework.boot:spring-boot-starter-data-rest')
     compile('org.springframework.boot:spring-boot-starter-web')
-
+    compile 'commons-httpclient:commons-httpclient:3.1'
     compile 'io.jsonwebtoken:jjwt:0.9.0'
     compile('org.woodylab.boot:spring-boot-starter-pebble:0.2.3')
     runtime('org.springframework.boot:spring-boot-devtools')

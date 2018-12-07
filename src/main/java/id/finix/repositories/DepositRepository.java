@@ -25,4 +25,8 @@ public interface DepositRepository extends JpaRepository<Deposit, Long> {
                                 @Param("startDate") Date startDate,
                                 @Param("endDate") Date endDate,
                                 Pageable pageable);
+
+    @Query("select d from Deposit d where d.resellerId = :resellerId order by d.datetime desc")
+    List<Deposit> getDeposits(@Param("resellerId") String resellerId,
+                              Pageable pageable);
 }

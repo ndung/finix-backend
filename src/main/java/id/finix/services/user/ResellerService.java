@@ -8,10 +8,12 @@ import id.finix.domain.Reseller;
 import id.finix.repositories.ParameterRepository;
 import id.finix.repositories.ResellerRepository;
 import id.finix.component.PasswordUtil;
+import id.finix.services.file.FileService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.text.SimpleDateFormat;
 import java.util.regex.Matcher;
@@ -24,6 +26,9 @@ public class ResellerService {
 
     @Autowired
     private ResellerRepository resellerRepository;
+
+    @Autowired
+    FileService fileService;
 
     @Autowired
     private ParameterRepository parameterRepository;
@@ -72,10 +77,10 @@ public class ResellerService {
     public Reseller changePassword(String userId, ChangePasswordRequest request) throws Exception {
         Reseller rs = resellerRepository.findOne(userId, PasswordUtil.md5Hash(request.getOldPassword()));
         if (rs == null) {
-            throw new Exception("User tidak ditemukan");
+            throw new Exception("Password lama salah");
         }
         if (!isPasswordValid(request.getNewPassword(), true, true, 8, 100)) {
-            throw new Exception("Password tidak valid. Minimal terdiri dari 1 huruf, 1 angka, dan 8 karakter");
+            throw new Exception("Password baru tidak valid. Minimal terdiri dari 1 huruf, 1 angka, dan 8 karakter");
         }
         rs.setPassword(PasswordUtil.md5Hash(request.getNewPassword()));
         return resellerRepository.saveAndFlush(rs);
@@ -113,6 +118,35 @@ public class ResellerService {
     }
 
     public Reseller updateReseller(Reseller rs){
+        return resellerRepository.saveAndFlush(rs);
+    }
+
+    public Reseller update(Reseller rs, UpdateAccountRequest request, MultipartFile pp, MultipartFile id){
+        if (pp!=null) {
+            String pathPP = fileService.upload("profile_picture", rs.getId(), pp);
+            rs.setProfilePicture(pathPP);
+        }
+        if (id!=null) {
+            String pathID = fileService.upload("identity_photo", rs.getId(), id);
+            rs.setIdentityPhoto(pathID);
+        }
+        rs.setMobileNumber(request.getMobileNumber());
+        rs.setName(request.getName());
+        rs.setAddress(request.getAddress());
+        rs.setProvince(request.getProvince());
+        rs.setCity(request.getCity());
+        rs.setDistrict(request.getDistrict());
+        rs.setSubdistrict(request.getSubdistrict());
+        rs.setZipCode(request.getZipcode());
+        rs.setIdentityNumber(request.getIdentityNo());
+        rs.setBirthDate(request.getBirthDate().replaceAll("-",""));
+        rs.setGender(request.getGender());
+        rs.setEmail(request.getEmail());
+        rs.setUniqueCode(request.getReferralCode());
+        rs.setTelegramUsername(request.getH2hAccount());
+        if (rs.getVerified().equalsIgnoreCase("N")){
+            rs.setVerified("P");
+        }
         return resellerRepository.saveAndFlush(rs);
     }
 

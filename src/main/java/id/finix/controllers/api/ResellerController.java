@@ -1,20 +1,28 @@
 package id.finix.controllers.api;
 
 import id.finix.Application;
+import id.finix.component.PasswordUtil;
 import id.finix.controllers.Response;
+import id.finix.domain.ChatMessage;
+import id.finix.domain.QrCode;
 import id.finix.domain.Reseller;
+import id.finix.services.chat.ChatMessageRequest;
 import id.finix.services.user.*;
-import java.util.List;
+
+import java.util.*;
+
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping(Application.API_PATH + "/user")
 public class ResellerController extends BaseController {
 
+    Map<String, QrCode> qrCodeMap = new HashMap<>();
     @Autowired
     private ResellerService resellerService;
     Logger logger = Logger.getLogger(ResellerController.class);
@@ -205,6 +213,111 @@ public class ResellerController extends BaseController {
                 return getHttpStatus(new Response("Nomor handphone tidak terdaftar"));
             }
         } catch (Exception e) {
+            return getHttpStatus(new Response(e.getMessage()));
+        }
+    }
+
+    @RequestMapping(value = "/gen-qr", method = RequestMethod.POST)
+    public ResponseEntity<Response> generateQrCode(@RequestHeader(Application.AUTH) String token) {
+        try {
+            String userId = getUserId(token);
+            if (userId==null){
+                return FORBIDDEN;
+            }
+            String code = PasswordUtil.create();
+            QrCode qrCode = new QrCode();
+            qrCode.setId(userId);
+            qrCode.setCode(code);
+            qrCode.setTime(new Date());
+            while (qrCodeMap.containsKey(code)) {
+                code = PasswordUtil.create();
+            }
+            qrCodeMap.put(code, qrCode);
+
+            return getHttpStatus(new Response(qrCode));
+        } catch (Exception e) {
+            return getHttpStatus(new Response(e.getMessage()));
+        }
+    }
+
+    @RequestMapping(value = "/get-qr", method = RequestMethod.POST)
+    public ResponseEntity<Response> getQrCode(@RequestHeader(Application.AUTH) String token,
+                                              @RequestBody String qrCode) {
+        try {
+            String userId = getUserId(token);
+            if (userId==null){
+                return FORBIDDEN;
+            }
+
+            QrCode res = new QrCode();
+            QrCode code = qrCodeMap.get(qrCode);
+            if (code != null) {
+                res.setId(code.getId());
+                return getHttpStatus(new Response(qrCode));
+            }else{
+                return getHttpStatus(new Response("Mohon refresh/ generate ulang QR code, lalu scan kembali"));
+            }
+
+        } catch (Exception e) {
+            return getHttpStatus(new Response(e.getMessage()));
+        }
+    }
+
+    @RequestMapping(value = "/update-account", method = RequestMethod.POST)
+    public ResponseEntity<Response> updateAccount(@RequestHeader(Application.AUTH) String token,
+                                                  @RequestParam("name") String name,
+                                                  @RequestParam("address") String address,
+                                                  @RequestParam("province") String province,
+                                                  @RequestParam("city") String city,
+                                                  @RequestParam("district") String district,
+                                                  @RequestParam("subdistrict") String subdistrict,
+                                                  @RequestParam("zipcode") String zipcode,
+                                                  @RequestParam("gender") String gender,
+                                                  @RequestParam("identityNo") String identityNo,
+                                                  @RequestParam("email") String email,
+                                                  @RequestParam("mobileNumber") String mobileNumber,
+                                                  @RequestParam("birthDate") String birthDate,
+                                                  @RequestParam("referralCode") String referralCode,
+                                                  @RequestParam("h2hAccount") String h2hAccount,
+                                                  @RequestParam("pp") Optional<MultipartFile> pp,
+                                                  @RequestParam("id") Optional<MultipartFile> id) {
+        String userId = getUserId(token);
+        if (userId==null){
+            return FORBIDDEN;
+        }
+        try {
+            Reseller rs = resellerService.findOne(userId);
+            if (rs!=null) {
+                UpdateAccountRequest request = new UpdateAccountRequest();
+                request.setName(name);
+                request.setAddress(address);
+                request.setProvince(province);
+                request.setCity(city);
+                request.setDistrict(district);
+                request.setSubdistrict(subdistrict);
+                request.setZipcode(zipcode);
+                request.setGender(gender);
+                request.setIdentityNo(identityNo);
+                request.setEmail(email);
+                request.setMobileNumber(mobileNumber);
+                request.setBirthDate(birthDate);
+                request.setReferralCode(referralCode);
+                request.setH2hAccount(h2hAccount);
+                MultipartFile ppFile = null;
+                if (pp.isPresent()){
+                    ppFile = pp.get();
+                }
+                MultipartFile idFile = null;
+                if (id.isPresent()){
+                    idFile = id.get();
+                }
+                rs = resellerService.update(rs, request, ppFile, idFile);
+                return getHttpStatus(new Response(rs));
+            }else{
+                return getHttpStatus(new Response("Nomor handphone tidak terdaftar"));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
             return getHttpStatus(new Response(e.getMessage()));
         }
     }
